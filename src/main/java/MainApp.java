@@ -27,7 +27,7 @@ public class MainApp extends Application {
         window.setScene(sc);
 
         stage.setScene(sc);
-        stage.setTitle("Game");
+        stage.setTitle("Asteroide");
         stage.show();
 
     }
