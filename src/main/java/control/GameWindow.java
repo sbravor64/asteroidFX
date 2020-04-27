@@ -23,7 +23,6 @@ public class GameWindow implements Initializable {
     @FXML
     Canvas gameCanvas;
 
-    //variables
     private Random random = new Random();
     private int width = 800;
     private int height = 600;
