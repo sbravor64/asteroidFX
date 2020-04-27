@@ -13,7 +13,6 @@ import javafx.scene.paint.Color;
 import javafx.scene.text.Font;
 import javafx.scene.text.TextAlignment;
 import javafx.util.Duration;
-
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.List;
@@ -22,24 +21,23 @@ import java.util.ResourceBundle;
 import java.util.stream.IntStream;
 
 public class GameWindow implements Initializable {
-
     @FXML
     Canvas gameCanvas;
 
     //variables
-    private static final Random RAND = new Random();
-    private static final int WIDTH = 800;
-    private static final int HEIGHT = 600;
-    private static final int PLAYER_SIZE = 60;
-    static final Image PLAYER_IMG = new Image("images/rockets/rocket_3@4x.png");
-    static final Image EXPLOSION_IMG = new Image("images/explosion/explosion_2@4x.png");
-    static final int EXPLOSION_W = 128;
-    static final int EXPLOSION_ROWS = 3;
-    static final int EXPLOSION_COL = 3;
-    static final int EXPLOSION_H = 128;
-    static final int EXPLOSION_STEPS = 15;
+    private Random random = new Random();
+    private int width = 800;
+    private int height = 600;
+    private int player_size = 60;
+    Image player_img = new Image("images/rockets/rocket_3@4x.png");
+    Image explosion_img = new Image("images/explosion/explosion_2@4x.png");
+    int explosion_w = 128;
+    int explosion_rows = 3;
+    int explosion_col = 3;
+    int explosion_h = 128;
+    int explosion_steps = 15;
 
-    static final Image BOMBS_IMG[] = {
+    static final Image marcianos_img[] = {
             new Image("images/marcianos/1@4x.png"),
             new Image("images/marcianos/2@4x.png"),
             new Image("images/marcianos/3@4x.png"),
@@ -51,18 +49,17 @@ public class GameWindow implements Initializable {
             new Image("images/marcianos/9@4x.png"),
     };
 
-    final int MAX_BOMBS = 10,  MAX_SHOTS = MAX_BOMBS * 2;
+    final int max_marcianos = 10,  max_disparos = max_marcianos * 2;
     boolean gameOver = false;
     private GraphicsContext gc;
 
     Rocket player;
-    List<Disparo> shots;
+    List<Disparo> disparos;
     List<Universo> univ;
-    List<Bomb> Bombs;
+    List<Marciano> marcianos;
 
     private double mouseX;
-    private int score;
-
+    private int puntos;
 
     private Scene scene;
 
@@ -76,7 +73,7 @@ public class GameWindow implements Initializable {
         gameCanvas.setCursor(Cursor.MOVE);
         gameCanvas.setOnMouseMoved(e -> mouseX = e.getX());
         gameCanvas.setOnMouseClicked(e -> {
-            if(shots.size() < MAX_SHOTS) shots.add(player.disparo());
+            if(disparos.size() < max_disparos) disparos.add(player.disparo());
             if(gameOver) {
                 gameOver = false;
                 setup();
@@ -90,30 +87,28 @@ public class GameWindow implements Initializable {
         scene=sc;
     }
 
-    //setup the game
     private void setup() {
         univ = new ArrayList<>();
-        shots = new ArrayList<>();
-        Bombs = new ArrayList<>();
-        player = new Rocket(WIDTH / 2, HEIGHT - PLAYER_SIZE, PLAYER_SIZE, PLAYER_IMG);
-        score = 0;
-        IntStream.range(0, MAX_BOMBS).mapToObj(i -> this.newBomb()).forEach(Bombs::add);
+        disparos = new ArrayList<>();
+        marcianos = new ArrayList<>();
+        player = new Rocket(width / 2, height - player_size, player_size, player_img);
+        puntos = 0;
+        IntStream.range(0, max_marcianos).mapToObj(i -> this.newMarciano()).forEach(marcianos::add);
     }
 
-    //run Graphics
     private void run(GraphicsContext gc) {
         gc.setFill(Color.grayRgb(20));
-        gc.fillRect(0, 0, WIDTH, HEIGHT);
+        gc.fillRect(0, 0, width, height);
         gc.setTextAlign(TextAlignment.CENTER);
         gc.setFont(Font.font(20));
         gc.setFill(Color.WHITE);
-        gc.fillText("Puntos: " + score, 60,  20);
+        gc.fillText("Puntos: " + puntos, 60,  20);
 
 
         if(gameOver) {
             gc.setFont(Font.font(35));
             gc.setFill(Color.YELLOW);
-            gc.fillText("Game Over \n Tu puntuación es: " + score + " \n Click para jugar otra ves", WIDTH / 2, HEIGHT /2.5);
+            gc.fillText("Game Over \n Tu puntuación es: " + puntos + " \n Click para jugar otra ves", width / 2, height /2.5);
             //	return;
         }
         univ.forEach(Universo::draw);
@@ -122,47 +117,81 @@ public class GameWindow implements Initializable {
         player.draw();
         player.posX = (int) mouseX;
 
-        Bombs.stream().peek(Rocket::update).peek(Rocket::draw).forEach(e -> {
+        marcianos.stream().peek(Rocket::update).peek(Rocket::draw).forEach(e -> {
             if(player.colide(e) && !player.exploding) {
                 player.explode();
             }
         });
 
 
-        for (int i = shots.size() - 1; i >=0 ; i--) {
-            Disparo shot = shots.get(i);
+        for (int i = disparos.size() - 1; i >=0 ; i--) {
+            Disparo shot = disparos.get(i);
             if(shot.posY < 0 || shot.toRemove)  {
-                shots.remove(i);
+                disparos.remove(i);
                 continue;
             }
             shot.update();
             shot.draw();
-            for (Bomb bomb : Bombs) {
+            for (Marciano bomb : marcianos) {
                 if(shot.colide(bomb) && !bomb.exploding) {
-                    score++;
+                    puntos++;
                     bomb.explode();
                     shot.toRemove = true;
                 }
             }
         }
 
-        for (int i = Bombs.size() - 1; i >= 0; i--){
-            if(Bombs.get(i).destroyed)  {
-                Bombs.set(i, newBomb());
+        for (int i = marcianos.size() - 1; i >= 0; i--){
+            if(marcianos.get(i).destroyed)  {
+                marcianos.set(i, newMarciano());
             }
         }
 
         gameOver = player.destroyed;
-        if(RAND.nextInt(10) > 2) {
+        if(random.nextInt(10) > 2) {
             univ.add(new Universo());
         }
         for (int i = 0; i < univ.size(); i++) {
-            if(univ.get(i).posY > HEIGHT)
+            if(univ.get(i).posY > height)
                 univ.remove(i);
         }
     }
 
-    //player
+    public class Disparo {
+
+        static final int size = 6;
+        public boolean toRemove;
+        int posX;
+        public int posY;
+        int speed = 30;
+
+        public Disparo(int posX, int posY) {
+            this.posX = posX;
+            this.posY = posY;
+        }
+
+        public void update() {
+            posY-=speed;
+        }
+
+        public void draw() {
+            gc.setFill(Color.RED);
+            if (puntos >=50 && puntos <=70 || puntos >=120) {
+                gc.setFill(Color.YELLOWGREEN);
+                speed = 50;
+                gc.fillRect(posX-5, posY-10, size +10, size +30);
+            } else {
+                gc.fillOval(posX, posY, size, size);
+            }
+        }
+
+        public boolean colide(GameWindow.Rocket Rocket) {
+            int distance = distancia(this.posX + size / 2, this.posY + size / 2,
+                    Rocket.posX + Rocket.size / 2, Rocket.posY + Rocket.size / 2);
+            return distance  < Rocket.size / 2 + size / 2;
+        }
+    }
+
     public class Rocket {
 
         int posX, posY, size;
@@ -183,13 +212,13 @@ public class GameWindow implements Initializable {
 
         public void update() {
             if(exploding) explosionStep++;
-            destroyed = explosionStep > EXPLOSION_STEPS;
+            destroyed = explosionStep > explosion_steps;
         }
 
         public void draw() {
             if(exploding) {
-                gc.drawImage(EXPLOSION_IMG, explosionStep % EXPLOSION_COL * EXPLOSION_W, (explosionStep / EXPLOSION_ROWS) * EXPLOSION_H + 1,
-                        EXPLOSION_W, EXPLOSION_H,
+                gc.drawImage(explosion_img, explosionStep % explosion_col * explosion_w, (explosionStep / explosion_rows) * explosion_h + 1,
+                        explosion_w, explosion_h,
                         posX, posY, size, size);
             }
             else {
@@ -210,75 +239,35 @@ public class GameWindow implements Initializable {
 
     }
 
-    //computer player
-    public class Bomb extends Rocket {
+    public class Marciano extends Rocket {
 
-        int SPEED = (score/5)+2;
+        int SPEED = (puntos /5)+2;
 
-        public Bomb(int posX, int posY, int size, Image image) {
+        public Marciano(int posX, int posY, int size, Image image) {
             super(posX, posY, size, image);
         }
 
         public void update() {
             super.update();
             if(!exploding && !destroyed) posY += SPEED;
-            if(posY > HEIGHT) destroyed = true;
+            if(posY > height) destroyed = true;
         }
     }
 
-    //bullets
-    public class Disparo {
-
-        public boolean toRemove;
-
-        int posX, posY, speed = 10;
-        static final int size = 6;
-
-        public Disparo(int posX, int posY) {
-            this.posX = posX;
-            this.posY = posY;
-        }
-
-        public void update() {
-            posY-=speed;
-        }
-
-
-        public void draw() {
-            gc.setFill(Color.RED);
-            if (score >=50 && score<=70 || score>=120) {
-                gc.setFill(Color.YELLOWGREEN);
-                speed = 50;
-                gc.fillRect(posX-5, posY-10, size+10, size+30);
-            } else {
-                gc.fillOval(posX, posY, size, size);
-            }
-        }
-
-        public boolean colide(Rocket Rocket) {
-            int distance = distancia(this.posX + size / 2, this.posY + size / 2,
-                    Rocket.posX + Rocket.size / 2, Rocket.posY + Rocket.size / 2);
-            return distance  < Rocket.size / 2 + size / 2;
-        }
-
-
-    }
-
-    //environment
     public class Universo {
         int posX, posY;
         private int h, w, r, g, b;
         private double opacity;
 
         public Universo() {
-            posX = RAND.nextInt(WIDTH);
+            posX = random.nextInt(width);
             posY = 0;
-            w = RAND.nextInt(5) + 1;
-            h =  RAND.nextInt(5) + 1;
-            r = RAND.nextInt(100) + 150;
-            g = RAND.nextInt(100) + 150;
-            b = RAND.nextInt(100) + 150;
-            opacity = RAND.nextFloat();
+            w = random.nextInt(5) + 1;
+            h =  random.nextInt(5) + 1;
+            r = random.nextInt(100) + 150;
+            g = random.nextInt(100) + 150;
+            b = random.nextInt(100) + 150;
+            opacity = random.nextFloat();
             if(opacity < 0) opacity *=-1;
             if(opacity > 0.5) opacity = 0.5;
         }
@@ -292,9 +281,8 @@ public class GameWindow implements Initializable {
         }
     }
 
-
-    Bomb newBomb() {
-        return new Bomb(50 + RAND.nextInt(WIDTH - 100), 0, PLAYER_SIZE, BOMBS_IMG[RAND.nextInt(BOMBS_IMG.length)]);
+    Marciano newMarciano() {
+        return new Marciano(50 + random.nextInt(width - 100), 0, player_size-20, marcianos_img[random.nextInt(marcianos_img.length)]);
     }
 
     int distancia(int x1, int y1, int x2, int y2) {

@@ -12,6 +12,6 @@
             fx:controller="control.GameWindow"
             prefHeight="600.0" prefWidth="800.0">
 
-    <Canvas fx:id="gameCanvas" height="400.0" width="600.0" />
+    <Canvas fx:id="gameCanvas" height="600.0" width="800.0" />
 
 </AnchorPane>
