@@ -29,11 +29,8 @@ public class GameWindow implements Initializable {
     private int player_size = 60;
     Image player_img = new Image("images/rockets/rocket_3@4x.png");
     Image explosion_img = new Image("images/explosion/explosion_2@4x.png");
-    int explosion_w = 128;
-    int explosion_rows = 3;
-    int explosion_col = 3;
-    int explosion_h = 128;
-    int explosion_steps = 15;
+    Image fondo_universe = new Image("images/fondo/fondo_space@4x.png");
+    int explosion_steps = 4;
 
     static final Image marcianos_img[] = {
             new Image("images/marcianos/1@4x.png"),
@@ -95,8 +92,10 @@ public class GameWindow implements Initializable {
     }
 
     private void run(GraphicsContext gc) {
-        gc.setFill(Color.grayRgb(20));
-        gc.fillRect(0, 0, width, height);
+        univ.forEach(Universo::draw);
+
+//        gc.setFill(Color.grayRgb(20));
+//        gc.fillRect(0, 0, width, height);
         gc.setTextAlign(TextAlignment.CENTER);
         gc.setFont(Font.font(20));
         gc.setFill(Color.WHITE);
@@ -109,8 +108,6 @@ public class GameWindow implements Initializable {
             gc.fillText("Game Over \n Tu puntuación es: " + puntos + " \n Click para jugar otra ves", width / 2, height /2.5);
             //	return;
         }
-        univ.forEach(Universo::draw);
-
         player.update();
         player.draw();
         player.posX = (int) mouseX;
@@ -215,8 +212,7 @@ public class GameWindow implements Initializable {
 
         public void draw() {
             if(exploding) {
-                gc.drawImage(explosion_img, explosionStep % explosion_col * explosion_w, (explosionStep / explosion_rows) * explosion_h + 1,
-                        explosion_w, explosion_h,
+                gc.drawImage(explosion_img,
                         posX, posY, size, size);
             }
             else {
@@ -273,6 +269,7 @@ public class GameWindow implements Initializable {
         public void draw() {
             if(opacity > 0.8) opacity-=0.01;
             if(opacity < 0.1) opacity+=0.01;
+            gc.drawImage(fondo_universe, 0,0);
             gc.setFill(Color.rgb(r, g, b, opacity));
             gc.fillOval(posX, posY, w, h);
             posY+=20;
